@@ -1,4 +1,0 @@
-flask==3.0.0
-llama-cpp-python==0.2.90
-gunicorn==21.2.0
-requests==2.31.0
