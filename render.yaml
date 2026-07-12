@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: genesis-coach
+    name: genesis-ia
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -8,8 +8,24 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
-      - key: LLAMA_CPP_PYTHON_NO_OPENMP
-        value: "1"
+      - key: MODEL_URL
+        value: https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
+      - key: N_CTX
+        value: 2048
+      - key: N_THREADS
+        value: 4
+      - key: MAX_TOKENS
+        value: 512
+      - key: TEMPERATURE
+        value: 0.7
+      - key: CREATOR_NAME
+        value: Profesor Víctor Campos
+      - key: CREATOR_ID
+        value: CI V-8270225
+      - key: COMPANY_NAME
+        value: Cieaseden 467 RL
+      - key: ASSISTANT_NAME
+        value: Génesis
     disk:
       name: model-cache
       mountPath: /models
