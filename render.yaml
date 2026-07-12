@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: genesis-coach
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 1 --timeout 120 -b 0.0.0.0:$PORT app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: LLAMA_CPP_PYTHON_NO_OPENMP
+        value: "1"
+    disk:
+      name: model-cache
+      mountPath: /models
+      sizeGB: 2
