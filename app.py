@@ -2,15 +2,17 @@ import os
 import gradio as gr
 from huggingface_hub import InferenceClient
 
-# Conexión con su secreto HF_TOKEN
-token = os.getenv("HF_TOKEN")
+# Conexión con su secreto HF
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-# Modelo activo y verificado en la API
+# Optimizamos a Gemma 2 9B (puedes cambiarlo si prefieres mantener Llama 3)
 MODELO_ACTIVO = "Qwen/Qwen2.5-72B-Instruct"
-cliente = InferenceClient(MODELO_ACTIVO, token=token)
 
-def respondedor(mensaje, historial):
-    mensaje_del_sistema = (
+# Inicializar el cliente de inferencia
+client = InferenceClient(MODELO_ACTIVO, token=HF_TOKEN)
+
+# System Prompt estructurado según tus directrices de negocio y financieras
+SYSTEM_PROMPT = (
         "Eres Génesis, una Coach y Asesora Empresarial de Élite con un enfoque sistémico, analítico y de alta dirección.\n\n"
         "IDENTIDAD PROFESIONAL:\n"
         "- Fuiste creada por el Profesor Víctor Campos (CI V-8270225).\n"
@@ -68,49 +70,70 @@ def respondedor(mensaje, historial):
         "9. Prioriza la jerarquía del éxito empresarial sostenible: Continuidad operativa y seguridad > Salud financiera (Flujo de caja) > Expansión de mercado."
     )
 
-def respondedor(mensaje, historial):
-    messages = [{"role": "system", "content": MENSAJE_SISTEMA_BASE}]
+# FUNCIÓN MODIFICADA CON CORRECCIÓN DE HISTORIAL
+def responder(mensaje, historial):
+    mensajes_api = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    # Procesamiento del historial
-    if historial:
-        for turn in historial:
-            if isinstance(turn, (list, tuple)) and len(turn) == 2:
-                messages.append({"role": "user", "content": str(turn[0])})
-                messages.append({"role": "assistant", "content": str(turn[1])})
+    # Adaptación segura del historial de Gradio para la API de Hugging Face
+    for elemento in historial:
+        # Caso 1: Gradio moderno pasa el historial como diccionarios {'role': '...', 'content': '...'}
+        if isinstance(elemento, dict):
+            role = elemento.get("role")
+            content = elemento.get("content")
+            if role in ["user", "assistant"] and content:
+                mensajes_api.append({"role": role, "content": content})
 
-    messages.append({"role": "user", "content": str(mensaje)})
+        # Caso 2: Gradio antiguo o personalizado pasa tuplas/listas
+        elif isinstance(elemento, (list, tuple)):
+            # Si tiene el formato esperado (usuario, asistente)
+            if len(elemento) == 2:
+                usuario, asistente = elemento
+                if usuario:
+                    mensajes_api.append({"role": "user", "content": usuario})
+                if asistente:
+                    mensajes_api.append({"role": "assistant", "content": asistente})
+            # Si viene con 4 elementos (metadatos de Gradio), extraemos los dos primeros
+            elif len(elemento) >= 2:
+                usuario, asistente = elemento[0], elemento[1]
+                if usuario:
+                    mensajes_api.append({"role": "user", "content": usuario})
+                if asistente:
+                    mensajes_api.append({"role": "assistant", "content": asistente})
 
-    text_response = ""
+    # Añadimos el último mensaje del usuario
+    mensajes_api.append({"role": "user", "content": mensaje})
+
+    respuesta_completa = ""
     try:
-        stream = cliente.chat_completion(
-            messages=messages,
-            max_tokens=1500,
-            stream=True,
-            temperature=0.7
-        )
-        for msg in stream:
-            token_content = msg.choices[0].delta.content
-            if token_content:
-                text_response += token_content
-                yield text_response
+        # Llamada por streaming al cliente de inferencia
+        for chunk in client.chat_completion(
+            messages=mensajes_api,
+            max_tokens=2500,
+            temperature=0.7,
+            stream=True
+        ):
+            token = chunk.choices[0].delta.content
+            if token:
+                respuesta_completa += token
+                yield respuesta_completa
     except Exception as e:
-        yield f"⚠️ [Nodo Business Cieaseden] Error técnico: {str(e)}"
+        yield f"Error en la inferencia: {str(e)}. Por favor, reintenta."
 
-# Interfaz gráfica
-with gr.Blocks(title="Genesis IA - Coach & Asesor Empresarial") as demo:
-    gr.Markdown("# Genesis IA | Alta Consultoría y Coaching Empresarial")
-    gr.Markdown("### Dirección Estratégica: Prof. Víctor Campos | CI V-8270225")
+# Configuración de ejemplos para la interfaz
+ejemplos = [
+    ["¿Quién te creó? El profesor Victor Campos."],
+    ["Mi flujo de caja está en rojo, ¿cómo hago un diagnóstico?."],
+    ["¿Cómo alinear producción con marketing digital?."],
+]
 
-    gr.ChatInterface(
-        fn=respondedor,
-        examples=[
-            "¿Quién te creó?",
-            "Mi flujo de caja está en rojo, ¿cómo hago un diagnóstico?",
-            "¿Cómo alinear producción con marketing digital?",
-        ],
-    )
-
-    gr.Markdown("<center>© 2026 Cieaseden 467 RL</center>")
+# Construcción de la interfaz Gradio
+demo = gr.ChatInterface(
+    fn=responder,
+    title="Genesis IA - Coach & Asesor Empresarial.",
+    description=" Mi desarrollador es el Prof. Víctor Campos | CI V-8270225.",
+    examples=ejemplos,
+    cache_examples=False
+)
 
 if __name__ == "__main__":
     # MODIFICACIÓN CRÍTICA PARA RENDER: Configuración de puerto y host obligatorio
