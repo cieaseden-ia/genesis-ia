@@ -6,7 +6,7 @@ from huggingface_hub import InferenceClient
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 # Optimizamos modelo activo
-MODELO_ACTIVO = "Qwen/Qwen2.5-72B-Instruct"
+MODELO_ACTIVO = "Qwen/Qwen2.5-14B-Instruct"
 
 # Inicializar el cliente de inferencia
 client = InferenceClient(MODELO_ACTIVO, token=HF_TOKEN)
