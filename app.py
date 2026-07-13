@@ -1,11 +1,24 @@
 import os
-import gradio as gr
-from huggingface_hub import InferenceClient
+from huggingface_hub import hf_hub_download
+
+# Descarga el modelo solo si no existe localmente
+def download_model():
+    model_repo = "bartowski/Qwen2.5-7B-Instruct-GGUF"
+    model_filename = "Qwen2.5-7B-Instruct-Q4_K_M.gguf"
+    
+    if not os.path.exists(model_filename):
+        print(f"Descargando {model_filename}...")
+        hf_hub_download(repo_id=model_repo, filename=model_filename, local_dir=".")
+    
+    return model_filename
+
+# Luego, inicializas tu motor de inferencia con el archivo local descargado
+model_path = download_model()
 
 # Conexión con su secreto HF
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# Optimizamos a Gemma 2 9B (puedes cambiarlo si prefieres mantener Llama 3)
+# Optimizamos modelo_activo
 MODELO_ACTIVO = "bartowski/Qwen2.5-14B-Instruct-GGUF"
 
 # Inicializar el cliente de inferencia
