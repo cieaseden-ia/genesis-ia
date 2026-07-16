@@ -123,7 +123,7 @@ ejemplos = [
 demo = gr.ChatInterface(
     fn=responder,
     title="Genesis IA - Coach & Asesor Empresarial.",
-    description="Mi disenador es el Prof. Víctor Campos | CI V-8270225.",
+    description="Genesis IA, una Inteligencia Artificial desarrollada por el Prof. Víctor Campos | CI V-8270225.",
     examples=ejemplos,
     cache_examples=False
 )
